@@ -19,9 +19,32 @@
 </style>
 </head>
 <body>
-<iframe
+<iframe id="app"
   src="https://script.google.com/macros/s/AKfycbynXyIFg4PVHJquD7KF7Sq7KJqtbCPfJr59bipC5xCG_e_yeo8akz0wfnnAt_6f-DMLtw/exec"
   title="门店日结"
   allow="clipboard-write; camera"></iframe>
+<script>
+/* 记住登录：Safari 不让框里的记账网页长期保存登录，所以由这个外壳页面替它保存。
+   只替自己框里的记账网页（Google Apps Script 的网址）存取；外壳被别的网页套住时不工作。 */
+(function(){
+  var frame = document.getElementById('app');
+  var KEY = 'll';
+  var okOrigin = /^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/;
+  function fromOurApp(src){
+    try { for (var w = src, i = 0; w && i < 6; i++) { if (w === frame.contentWindow) return true; if (w === w.parent) return false; w = w.parent; } } catch (e) {}
+    return false;
+  }
+  window.addEventListener('message', function(e){
+    if (window.top !== window || !okOrigin.test(e.origin) || !fromOurApp(e.source)) return;
+    var d = e.data || {};
+    if (d.t === 'll-get') {
+      var v = null; try { v = localStorage.getItem(KEY); } catch (err) {}
+      e.source.postMessage({ t: 'll-val', id: d.id, v: v }, e.origin);
+    } else if (d.t === 'll-set') {
+      try { typeof d.v === 'string' && d.v ? localStorage.setItem(KEY, d.v) : localStorage.removeItem(KEY); } catch (err) {}
+    }
+  });
+})();
+</script>
 </body>
 </html>
