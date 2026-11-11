@@ -41,7 +41,10 @@
       var v = null; try { v = localStorage.getItem(KEY); } catch (err) {}
       e.source.postMessage({ t: 'll-val', id: d.id, v: v }, e.origin);
     } else if (d.t === 'll-set') {
-      try { typeof d.v === 'string' && d.v ? localStorage.setItem(KEY, d.v) : localStorage.removeItem(KEY); } catch (err) {}
+      var ok = true, msg = '';
+      try { typeof d.v === 'string' && d.v ? localStorage.setItem(KEY, d.v) : localStorage.removeItem(KEY); } catch (err) { ok = false; msg = String(err && err.name || err); }
+      var back = false; try { back = !!localStorage.getItem(KEY); } catch (err) {}
+      e.source.postMessage({ t: 'll-ack', id: d.id, ok: ok, back: back, err: msg }, e.origin);
     }
   });
 })();
