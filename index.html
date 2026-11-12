@@ -24,11 +24,12 @@
   title="门店日结"
   allow="clipboard-write; camera"></iframe>
 <script>
-/* 记住登录：Safari 不让框里的记账网页长期保存登录，所以由这个外壳页面替它保存。
+/* 记住登录和语言：Safari 不让框里的记账网页长期保存登录，所以由这个外壳页面替它保存。
    只替自己框里的记账网页（Google Apps Script 的网址）存取；外壳被别的网页套住时不工作。 */
 (function(){
   var frame = document.getElementById('app');
   var KEY = 'll';
+  var KV_KEYS = ['lang', 'copyLang'];
   var okOrigin = /^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/;
   function fromOurApp(src){
     try { for (var w = src, i = 0; w && i < 6; i++) { if (w === frame.contentWindow) return true; if (w === w.parent) return false; w = w.parent; } } catch (e) {}
@@ -45,6 +46,16 @@
       try { typeof d.v === 'string' && d.v ? localStorage.setItem(KEY, d.v) : localStorage.removeItem(KEY); } catch (err) { ok = false; msg = String(err && err.name || err); }
       var back = false; try { back = !!localStorage.getItem(KEY); } catch (err) {}
       e.source.postMessage({ t: 'll-ack', id: d.id, ok: ok, back: back, err: msg }, e.origin);
+    } else if ((d.t === 'kv-get' || d.t === 'kv-set') && KV_KEYS.indexOf(d.k) >= 0) {
+      /* 界面语言、发群文字语言：只存这两项，值只能是几个固定的短代码 */
+      var k = 'kv:' + d.k;
+      if (d.t === 'kv-get') {
+        var kv = null; try { kv = localStorage.getItem(k); } catch (err) {}
+        e.source.postMessage({ t: 'kv-val', id: d.id, v: kv }, e.origin);
+      } else {
+        try { /^[a-z]{2,4}$/.test(d.v) ? localStorage.setItem(k, d.v) : localStorage.removeItem(k); } catch (err) {}
+        e.source.postMessage({ t: 'kv-ack', id: d.id }, e.origin);
+      }
     }
   });
 })();
